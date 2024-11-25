@@ -1,0 +1,8 @@
+*.class
+ target/
+ .idea
+ .mvn
+ *mvnw*
+ *.log
+ *.iml
+ *.db
