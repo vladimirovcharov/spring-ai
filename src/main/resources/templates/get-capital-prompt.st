@@ -1,1 +1,1 @@
-What is the capital of {stateOrCountry}?
+What is the capital of {stateOrCountry}? Response in JSON wihout markers with the name of the city in a property `answer`.
