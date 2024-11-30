@@ -2,14 +2,13 @@ package com.example.spring_ai.services;
 
 import com.example.spring_ai.model.Answer;
 import com.example.spring_ai.model.GetCapitalRequest;
+import com.example.spring_ai.model.GetCapitalResponse;
 import com.example.spring_ai.model.Question;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -19,7 +18,6 @@ import java.util.Map;
 @Service
 public class OpenAiServiceImpl implements OpenAiService {
     private final ChatModel chatModel;
-    private final ObjectMapper objectMapper;
 
     @Value("classpath:templates/get-capital-prompt.st")
     private Resource getCapitalPrompt;
@@ -27,9 +25,8 @@ public class OpenAiServiceImpl implements OpenAiService {
     @Value("classpath:templates/get-capital-with-info-prompt.st")
     private Resource getCapitalWithInfoPrompt;
 
-    public OpenAiServiceImpl(ChatModel chatModel, ObjectMapper objectMapper) {
+    public OpenAiServiceImpl(ChatModel chatModel) {
         this.chatModel = chatModel;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -53,22 +50,20 @@ public class OpenAiServiceImpl implements OpenAiService {
     }
 
     @Override
-    public Answer getCapital(GetCapitalRequest request) {
+    public GetCapitalResponse getCapital(GetCapitalRequest request) {
+        BeanOutputConverter<GetCapitalResponse> converter = new BeanOutputConverter<>(GetCapitalResponse.class);
+        String format = converter.getFormat();
+        System.out.println("Format: \n" + format);
+
         PromptTemplate promptTemplate = new PromptTemplate(getCapitalPrompt);
-        Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", request.stateOrCountry()));
+        Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", request.stateOrCountry(),
+                "format", format));
         ChatResponse response = chatModel.call(prompt);
 
-        System.out.println(response.getResult().getOutput().getContent());
+        String responseContent = response.getResult().getOutput().getContent();
+        System.out.println(responseContent);
 
-        String responseString;
-        try {
-            JsonNode jsonNode = objectMapper.readTree(response.getResult().getOutput().getContent());
-            responseString = jsonNode.get("answer").asText();
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        return new Answer(responseString);
+        return converter.convert(responseContent);
     }
 
     @Override
