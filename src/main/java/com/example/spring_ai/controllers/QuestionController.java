@@ -1,9 +1,6 @@
 package com.example.spring_ai.controllers;
 
-import com.example.spring_ai.model.Answer;
-import com.example.spring_ai.model.GetCapitalRequest;
-import com.example.spring_ai.model.GetCapitalResponse;
-import com.example.spring_ai.model.Question;
+import com.example.spring_ai.model.*;
 import com.example.spring_ai.services.OpenAiService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,7 +16,7 @@ public class QuestionController {
     }
 
     @PostMapping("/capitalWithInfo")
-    public Answer getCapitalWithInfo(@RequestBody GetCapitalRequest request) {
+    public GetCapitalWithInfoResponse getCapitalWithInfo(@RequestBody GetCapitalRequest request) {
         return openAiService.getCapitalWithInfo(request);
     }
 
