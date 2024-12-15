@@ -29,4 +29,9 @@ public class QuestionController {
     public Answer askQuestion(@RequestBody Question question) {
         return openAiService.getAnswer(question);
     }
+
+    @PostMapping("/ask-vector")
+    public Answer askVectorQuestion(@RequestBody Question question) {
+        return openAiService.getVectorAnswer(question);
+    }
 }
