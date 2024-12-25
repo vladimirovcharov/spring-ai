@@ -23,6 +23,9 @@ spring:
         indexType: IVF_FLAT
         metricType: COSINE
         initialize-schema: true
+weather:
+  apiKey: ${API_WEATHER_KEY}
+  apiUrl: http://api.weatherapi.com/v1
 sfg:
   ai-app:
     vectorStorePath: src/main/resources/vectorstore.json

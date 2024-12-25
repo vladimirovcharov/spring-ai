@@ -39,4 +39,14 @@ public class QuestionController {
     public Answer askTowQuestion(@RequestBody Question question) {
         return openAiService.getTowAnswer(question);
     }
+
+    @PostMapping("/weather")
+    public Answer getWeather(@RequestBody Question question) {
+        return openAiService.getWeather(question);
+    }
+
+    @PostMapping("/weather-json")
+    public Answer getWeatherJson(@RequestBody Question question) {
+        return openAiService.getWeatherJson(question);
+    }
 }

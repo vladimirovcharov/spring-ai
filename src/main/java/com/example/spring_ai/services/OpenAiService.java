@@ -19,4 +19,8 @@ public interface OpenAiService {
     GetCapitalWithInfoResponse getCapitalWithInfo(GetCapitalRequest request);
 
     Answer getTowAnswer(Question question);
+
+    Answer getWeather(Question question);
+
+    Answer getWeatherJson(Question question);
 }
