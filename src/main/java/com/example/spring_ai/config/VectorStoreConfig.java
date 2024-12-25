@@ -18,15 +18,15 @@ import java.util.List;
 public class VectorStoreConfig {
 
     @Bean
-    public SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel, VectorStoreProperties vectorStoreProperties) {
+    public SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel, SimpleVectorStoreProperties simpleVectorStoreProperties) {
         SimpleVectorStore store = new SimpleVectorStore(embeddingModel);
-        File vectorStoreFile = new File(vectorStoreProperties.getVectorStorePath());
+        File vectorStoreFile = new File(simpleVectorStoreProperties.getVectorStorePath());
 
         if (vectorStoreFile.exists()) {
             store.load(vectorStoreFile);
         } else {
             log.debug("Loading documents into vector store");
-            vectorStoreProperties.getDocumentsToLoad().forEach(document -> {
+            simpleVectorStoreProperties.getDocumentsToLoad().forEach(document -> {
                 log.debug("Loading document: {}", document.getFilename());
                 TikaDocumentReader documentReader = new TikaDocumentReader(document);
                 List<Document> docs = documentReader.get();

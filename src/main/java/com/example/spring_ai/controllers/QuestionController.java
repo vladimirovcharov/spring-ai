@@ -34,4 +34,9 @@ public class QuestionController {
     public Answer askVectorQuestion(@RequestBody Question question) {
         return openAiService.getVectorAnswer(question);
     }
+
+    @PostMapping("/ask-tow")
+    public Answer askTowQuestion(@RequestBody Question question) {
+        return openAiService.getTowAnswer(question);
+    }
 }

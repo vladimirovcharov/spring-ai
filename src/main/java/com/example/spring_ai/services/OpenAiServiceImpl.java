@@ -1,14 +1,17 @@
 package com.example.spring_ai.services;
 
 import com.example.spring_ai.model.*;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -19,7 +22,8 @@ import java.util.Map;
 @Service
 public class OpenAiServiceImpl implements OpenAiService {
     private final ChatModel chatModel;
-    private final SimpleVectorStore vectorStore;
+    private final SimpleVectorStore simpleVectorStore;
+    private final VectorStore vectorStore;
 
     @Value("classpath:templates/get-capital-prompt.st")
     private Resource getCapitalPrompt;
@@ -33,8 +37,12 @@ public class OpenAiServiceImpl implements OpenAiService {
     @Value("classpath:templates/rag-prompt-template-meta.st")
     private Resource ragPromptTemplateMeta;
 
-    public OpenAiServiceImpl(ChatModel chatModel, SimpleVectorStore vectorStore) {
+    @Value("classpath:/templates/system-message.st")
+    private Resource systemMessageTemplate;
+
+    public OpenAiServiceImpl(ChatModel chatModel, SimpleVectorStore simpleVectorStore, VectorStore vectorStore) {
         this.chatModel = chatModel;
+        this.simpleVectorStore = simpleVectorStore;
         this.vectorStore = vectorStore;
     }
 
@@ -60,7 +68,7 @@ public class OpenAiServiceImpl implements OpenAiService {
 
     @Override
     public Answer getVectorAnswer(Question question) {
-        List<Document> documents = vectorStore.similaritySearch(SearchRequest.query(question.question()).withTopK(5));
+        List<Document> documents = simpleVectorStore.similaritySearch(SearchRequest.query(question.question()).withTopK(5));
         List<String> contentList = documents.stream().map(Document::getContent).toList();
 
         PromptTemplate promptTemplate = new PromptTemplate(ragPromptTemplateMeta);
@@ -107,5 +115,23 @@ public class OpenAiServiceImpl implements OpenAiService {
         System.out.println(responseContent);
 
         return converter.convert(responseContent);
+    }
+
+    @Override
+    public Answer getTowAnswer(Question question) {
+        PromptTemplate systemMessagePromptTemplate = new SystemPromptTemplate(systemMessageTemplate);
+        Message systemMessage = systemMessagePromptTemplate.createMessage();
+
+        List<Document> documents = vectorStore.similaritySearch(SearchRequest
+                .query(question.question()).withTopK(5));
+        List<String> contentList = documents.stream().map(Document::getContent).toList();
+
+        PromptTemplate promptTemplate = new PromptTemplate(ragPromptTemplate);
+        Message userMessage = promptTemplate.createMessage(Map.of("input", question.question(), "documents",
+                String.join("\n", contentList)));
+
+        ChatResponse response = chatModel.call(new Prompt(List.of(systemMessage, userMessage)));
+
+        return new Answer(response.getResult().getOutput().getContent());
     }
 }

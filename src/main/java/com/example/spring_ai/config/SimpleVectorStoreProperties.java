@@ -9,10 +9,10 @@ import org.springframework.core.io.Resource;
 import java.util.List;
 
 @Configuration
-@ConfigurationProperties(prefix = "sfg.rag-expert")
+@ConfigurationProperties(prefix = "sfg.ai-app")
 @Getter
 @Setter
-public class VectorStoreProperties {
+public class SimpleVectorStoreProperties {
     private String vectorStorePath;
     private List<Resource> documentsToLoad;
 }
