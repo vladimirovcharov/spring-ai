@@ -182,8 +182,8 @@ public class OpenAiServiceImpl implements OpenAiService {
                 .withHeight(1024).withWidth(1024) //1792
                 .withResponseFormat("b64_json")
                 .withModel("dall-e-3")
-                .withQuality("hd") //default standard
-                //.withStyle("natural") //default vivid
+//                .withQuality("hd") //default standard
+//                .withStyle("natural") //default vivid
                 .build();
 
         ImagePrompt imagePrompt = new ImagePrompt(question.question(), options);
