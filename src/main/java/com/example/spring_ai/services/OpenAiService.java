@@ -5,6 +5,7 @@ import com.example.spring_ai.model.GetCapitalRequest;
 import com.example.spring_ai.model.GetCapitalResponse;
 import com.example.spring_ai.model.GetCapitalWithInfoResponse;
 import com.example.spring_ai.model.Question;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface OpenAiService {
 
@@ -23,4 +24,8 @@ public interface OpenAiService {
     Answer getWeather(Question question);
 
     Answer getWeatherJson(Question question);
+
+    byte[] getImage(Question question);
+
+    String getDescription(MultipartFile file);
 }

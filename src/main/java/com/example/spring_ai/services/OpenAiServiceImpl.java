@@ -4,6 +4,7 @@ import com.example.spring_ai.model.*;
 import com.example.spring_ai.model.weather.WeatherResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -11,7 +12,12 @@ import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.image.ImageModel;
+import org.springframework.ai.image.ImagePrompt;
+import org.springframework.ai.model.Media;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.OpenAiImageOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
@@ -19,7 +25,10 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeTypeUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +38,7 @@ public class OpenAiServiceImpl implements OpenAiService {
     private final ChatModel chatModel;
     private final SimpleVectorStore simpleVectorStore;
     private final VectorStore vectorStore;
+    private final ImageModel imageModel;
 
     @Value("classpath:templates/get-capital-prompt.st")
     private Resource getCapitalPrompt;
@@ -45,10 +55,11 @@ public class OpenAiServiceImpl implements OpenAiService {
     @Value("classpath:/templates/system-message.st")
     private Resource systemMessageTemplate;
 
-    public OpenAiServiceImpl(ChatModel chatModel, SimpleVectorStore simpleVectorStore, VectorStore vectorStore) {
+    public OpenAiServiceImpl(ChatModel chatModel, SimpleVectorStore simpleVectorStore, VectorStore vectorStore, ImageModel imageModel) {
         this.chatModel = chatModel;
         this.simpleVectorStore = simpleVectorStore;
         this.vectorStore = vectorStore;
+        this.imageModel = imageModel;
     }
 
     @Override
@@ -163,5 +174,36 @@ public class OpenAiServiceImpl implements OpenAiService {
         var response = chatModel.call(new Prompt(List.of(userMessage), promptOptions));
 
         return new Answer(response.getResult().getOutput().getContent());
+    }
+
+    @Override
+    public byte[] getImage(Question question) {
+        var options = OpenAiImageOptions.builder()
+                .withHeight(1024).withWidth(1024) //1792
+                .withResponseFormat("b64_json")
+                .withModel("dall-e-3")
+                .withQuality("hd") //default standard
+                //.withStyle("natural") //default vivid
+                .build();
+
+        ImagePrompt imagePrompt = new ImagePrompt(question.question(), options);
+
+        var imageResponse = imageModel.call(imagePrompt);
+
+        return Base64.getDecoder().decode(imageResponse.getResult().getOutput().getB64Json());
+    }
+
+    @Override
+    public String getDescription(MultipartFile file) {
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .withModel(OpenAiApi.ChatModel.GPT_4_TURBO.getValue())
+                .build();
+
+        var userMessage = new UserMessage("Explain what do you see in this picture?",
+                List.of(new Media(MimeTypeUtils.IMAGE_JPEG, file.getResource())));
+
+        ChatResponse response = chatModel.call(new Prompt(List.of(userMessage), options));
+
+        return response.getResult().getOutput().toString();
     }
 }
