@@ -66,4 +66,9 @@ public class QuestionController {
     public ResponseEntity<String> getVision(@Validated @RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(openAiService.getDescription(file));
     }
+
+    @PostMapping(value ="/talk", produces = "audio/mpeg")
+    public byte[] getTextToVoice(@RequestBody Question question) {
+        return openAiService.getSpeech(question);
+    }
 }

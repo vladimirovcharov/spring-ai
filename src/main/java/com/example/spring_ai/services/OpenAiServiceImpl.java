@@ -15,10 +15,15 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.image.ImagePrompt;
 import org.springframework.ai.model.Media;
+import org.springframework.ai.openai.OpenAiAudioSpeechModel;
+import org.springframework.ai.openai.OpenAiAudioSpeechOptions;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiImageOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.openai.api.OpenAiAudioApi;
 import org.springframework.ai.openai.api.ResponseFormat;
+import org.springframework.ai.openai.audio.speech.SpeechPrompt;
+import org.springframework.ai.openai.audio.speech.SpeechResponse;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -39,6 +44,7 @@ public class OpenAiServiceImpl implements OpenAiService {
     private final SimpleVectorStore simpleVectorStore;
     private final VectorStore vectorStore;
     private final ImageModel imageModel;
+    private final OpenAiAudioSpeechModel speechModel;
 
     @Value("classpath:templates/get-capital-prompt.st")
     private Resource getCapitalPrompt;
@@ -55,11 +61,12 @@ public class OpenAiServiceImpl implements OpenAiService {
     @Value("classpath:/templates/system-message.st")
     private Resource systemMessageTemplate;
 
-    public OpenAiServiceImpl(ChatModel chatModel, SimpleVectorStore simpleVectorStore, VectorStore vectorStore, ImageModel imageModel) {
+    public OpenAiServiceImpl(ChatModel chatModel, SimpleVectorStore simpleVectorStore, VectorStore vectorStore, ImageModel imageModel, OpenAiAudioSpeechModel speechModel) {
         this.chatModel = chatModel;
         this.simpleVectorStore = simpleVectorStore;
         this.vectorStore = vectorStore;
         this.imageModel = imageModel;
+        this.speechModel = speechModel;
     }
 
     @Override
@@ -205,5 +212,21 @@ public class OpenAiServiceImpl implements OpenAiService {
         ChatResponse response = chatModel.call(new Prompt(List.of(userMessage), options));
 
         return response.getResult().getOutput().toString();
+    }
+
+    @Override
+    public byte[] getSpeech(Question question) {
+        OpenAiAudioSpeechOptions speechOptions = OpenAiAudioSpeechOptions.builder()
+                .withVoice(OpenAiAudioApi.SpeechRequest.Voice.ALLOY)
+                .withSpeed(1.0f)
+                .withResponseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.MP3)
+                .withModel(OpenAiAudioApi.TtsModel.TTS_1.value)
+                .build();
+
+        SpeechPrompt speechPrompt = new SpeechPrompt(question.question(), speechOptions);
+
+        SpeechResponse response = speechModel.call(speechPrompt);
+
+        return response.getResult().getOutput();
     }
 }
